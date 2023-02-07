@@ -1,4 +1,4 @@
-package com.michael.customer.payload.response;
+package com.michael.clients.fraud;
 
 import lombok.*;
 

@@ -1,6 +1,6 @@
 package com.michael.fraud.controller;
 
-import com.michael.fraud.entity.FraudCheckResponse;
+import com.michael.clients.fraud.FraudCheckResponse;
 import com.michael.fraud.service.FraudCheckHistoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

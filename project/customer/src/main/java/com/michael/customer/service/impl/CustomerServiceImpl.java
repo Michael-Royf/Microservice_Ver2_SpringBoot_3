@@ -1,9 +1,12 @@
 package com.michael.customer.service.impl;
 
+import com.michael.clients.fraud.FraudCheckResponse;
+import com.michael.clients.fraud.FraudClients;
+import com.michael.clients.notification.NotificationClient;
+import com.michael.clients.notification.NotificationRequest;
 import com.michael.customer.entity.Customer;
 import com.michael.customer.payload.request.CustomerRequest;
 import com.michael.customer.payload.response.CustomerResponse;
-import com.michael.customer.payload.response.FraudCheckResponse;
 import com.michael.customer.repository.CustomerRepository;
 import com.michael.customer.service.CustomerService;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,7 +27,13 @@ public class CustomerServiceImpl implements CustomerService {
     private ModelMapper mapper;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private FraudClients fraudClients;
+
+    @Autowired
+    private NotificationClient notificationClient;
+
+//    @Autowired
+//    private RestTemplate restTemplate;
 
     @Override
     public CustomerResponse registerCustomer(CustomerRequest customerRequest) {
@@ -34,14 +43,26 @@ public class CustomerServiceImpl implements CustomerService {
                 .email(customerRequest.getEmail())
                 .build();
         customer = customerRepository.saveAndFlush(customer);
-        FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
-                "http://FRAUD-SERVICE/api/v1/fraud-check/{customerId}",
-                FraudCheckResponse.class,
-                customer.getId()
-        );
+
+//        FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
+//                "http://FRAUD/api/v1/fraud-check/{customerId}",
+//                FraudCheckResponse.class,
+//                customer.getId()
+//        );
+
+        FraudCheckResponse fraudCheckResponse = fraudClients.fraudCheckResponseIsFraudster(customer.getId());
+
         if (fraudCheckResponse.getIsFraudster()) {
             throw new IllegalStateException("This customer is fraudster");
         }
+
+        NotificationRequest notificationRequest = NotificationRequest.builder()
+                .toCustomerId(customer.getId())
+                .toCustomerName(customer.getFirstName())
+                .message(String.format("Hi %s, welcome to Michael WebSite...",
+                        customer.getFirstName()))
+                .build();
+       notificationClient.sendNotification(notificationRequest);
 
         return mapper.map(customer, CustomerResponse.class);
     }
